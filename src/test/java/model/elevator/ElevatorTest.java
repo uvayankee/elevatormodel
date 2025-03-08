@@ -4,8 +4,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
-import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class ElevatorTest {
 
@@ -53,21 +52,21 @@ public class ElevatorTest {
         elevator.goToFloor(2);
         assertSame(2, elevator.getFloor());
         assertSame(Elevator.DoorsState.opened, elevator.getDoorsState());
+        assertEquals(3, elevator.getActionLog().size());
     }
 
     @Test
     public void testFloorMovementThreeFloors() {
         Elevator elevator = new Elevator(3);
         assertSame(1, elevator.getFloor());
-        elevator.goToFloor(2);
-        assertSame(2, elevator.getFloor());
-        assertSame(Elevator.DoorsState.opened, elevator.getDoorsState());
         elevator.goToFloor(3);
         assertSame(3, elevator.getFloor());
         assertSame(Elevator.DoorsState.opened, elevator.getDoorsState());
+        assertEquals(4, elevator.getActionLog().size());
         elevator.goToFloor(1);
         assertSame(1, elevator.getFloor());
         assertSame(Elevator.DoorsState.opened, elevator.getDoorsState());
+        assertEquals(8, elevator.getActionLog().size());
     }
 
 }
