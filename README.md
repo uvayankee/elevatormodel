@@ -12,7 +12,7 @@ Requirements
 - [x] Elevator needs to go to that floor
 - [ ] Elevator needs to open doors after it arrives at the destination floor
 - [ ] Elevator needs to close doors before it starts moving
-- [ ] Elevator needs to more one floor at a time
+- [ ] Elevator needs to more one floor at a time (need to make this testable)
 - [ ] Elevator needs to be callable to a floor
 - [ ] Elevator should be able to accommodate basements
 - [ ] Elevator should (optionally) skip floors if the building doesn't have them (13)

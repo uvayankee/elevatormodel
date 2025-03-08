@@ -52,6 +52,7 @@ public class ElevatorTest {
         assertSame(1, elevator.getFloor());
         elevator.goToFloor(2);
         assertSame(2, elevator.getFloor());
+        assertSame(Elevator.DoorsState.opened, elevator.getDoorsState());
     }
 
     @Test
@@ -60,10 +61,13 @@ public class ElevatorTest {
         assertSame(1, elevator.getFloor());
         elevator.goToFloor(2);
         assertSame(2, elevator.getFloor());
+        assertSame(Elevator.DoorsState.opened, elevator.getDoorsState());
         elevator.goToFloor(3);
         assertSame(3, elevator.getFloor());
+        assertSame(Elevator.DoorsState.opened, elevator.getDoorsState());
         elevator.goToFloor(1);
         assertSame(1, elevator.getFloor());
+        assertSame(Elevator.DoorsState.opened, elevator.getDoorsState());
     }
 
 }
