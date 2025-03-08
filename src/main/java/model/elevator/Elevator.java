@@ -1,25 +1,15 @@
 package model.elevator;
 
-import java.lang.reflect.Array;
-
 public class Elevator {
 
+    private final int[] floorButtons;
     private DoorsState doorsState;
-
     private int floor;
-
-    private int[] floorButtons;
-
-    public enum DoorsState {closed, opened}
-
-    public DoorsState getDoorsState() {
-        return doorsState;
-    }
 
     public Elevator() {
         doorsState = DoorsState.opened;
         floor = 1;
-        floorButtons = new int[] {1, 2};
+        floorButtons = new int[]{1, 2};
     }
 
     public Elevator(int maxFloor) {
@@ -27,15 +17,17 @@ public class Elevator {
         floor = 1;
         floorButtons = new int[maxFloor];
         for (int i = 0; i < maxFloor; i++) {
-            floorButtons[i] = i+1;
+            floorButtons[i] = i + 1;
         }
+    }
+
+    public DoorsState getDoorsState() {
+        return doorsState;
     }
 
     public boolean isTrue() {
         return true;
     }
-
-
 
     public DoorsState openDoors() {
         doorsState = DoorsState.opened;
@@ -59,6 +51,7 @@ public class Elevator {
         return floorButtons;
     }
 
+    public enum DoorsState {closed, opened}
+
 }
 
-;
