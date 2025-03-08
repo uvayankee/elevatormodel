@@ -10,9 +10,12 @@ Requirements
 - [x] Elevator needs to provide a set of floors it can visit
 - [x] Elevator needs to accept a floor choice
 - [x] Elevator needs to go to that floor
-- [ ] Elevator needs to open doors after it arrives at the destination floor
-- [ ] Elevator needs to close doors before it starts moving
-- [ ] Elevator needs to more one floor at a time (need to make this testable)
+- [x] Elevator needs to open doors after it arrives at the destination floor
+- [x] Elevator needs to close doors before it starts moving
+- [x] Elevator needs to more one floor at a time (actionlog for now)
 - [ ] Elevator needs to be callable to a floor
+- [ ] Elevator needs a bank with external call buttons
+- [ ] Elevator bank represents all floors
+- [ ] Elevator bank can hold multiple elevators
 - [ ] Elevator should be able to accommodate basements
 - [ ] Elevator should (optionally) skip floors if the building doesn't have them (13)
