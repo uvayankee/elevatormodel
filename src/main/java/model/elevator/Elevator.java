@@ -22,6 +22,15 @@ public class Elevator {
         floorButtons = new int[] {1, 2};
     }
 
+    public Elevator(int maxFloor) {
+        doorsState = DoorsState.opened;
+        floor = 1;
+        floorButtons = new int[maxFloor];
+        for (int i = 0; i < maxFloor; i++) {
+            floorButtons[i] = i+1;
+        }
+    }
+
     public boolean isTrue() {
         return true;
     }
