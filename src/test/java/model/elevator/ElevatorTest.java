@@ -46,4 +46,24 @@ public class ElevatorTest {
         assertSame(floors, elevator.getFloorButtons().length);
     }
 
+    @Test
+    public void testFloorMovement() {
+        Elevator elevator = new Elevator();
+        assertSame(1, elevator.getFloor());
+        elevator.goToFloor(2);
+        assertSame(2, elevator.getFloor());
+    }
+
+    @Test
+    public void testFloorMovementThreeFloors() {
+        Elevator elevator = new Elevator(3);
+        assertSame(1, elevator.getFloor());
+        elevator.goToFloor(2);
+        assertSame(2, elevator.getFloor());
+        elevator.goToFloor(3);
+        assertSame(3, elevator.getFloor());
+        elevator.goToFloor(1);
+        assertSame(1, elevator.getFloor());
+    }
+
 }

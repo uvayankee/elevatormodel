@@ -43,7 +43,7 @@ public class Elevator {
         return floor;
     }
 
-    public void setFloor(int floor) {
+    public void goToFloor(int floor) {
         this.floor = floor;
     }
 
