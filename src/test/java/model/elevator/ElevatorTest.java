@@ -22,7 +22,12 @@ public class ElevatorTest {
     @Test
     public void testElevatorDoorsAreClosed() {
         Elevator elevator = new Elevator();
-        elevator.closeDoors();
-        assertSame(Elevator.DoorsState.closed, elevator.getDoorsState());
+        assertSame(Elevator.DoorsState.closed, elevator.closeDoors());
+    }
+
+    @Test
+    public void testElevatorInitialFloor() {
+        Elevator elevator = new Elevator();
+        assertSame(1, elevator.getFloor());
     }
 }
