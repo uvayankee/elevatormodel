@@ -1,6 +1,8 @@
 package model.elevator;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -37,10 +39,11 @@ public class ElevatorTest {
         assertSame(2, elevator.getFloorButtons().length);
     }
 
-    @Test
-    public void testElevatorButtonsMoreFloors() {
-        Elevator elevator = new Elevator(3);
-        assertSame(3, elevator.getFloorButtons().length);
+    @ParameterizedTest
+    @ValueSource(ints = {2,3,4,5,6,7})
+    public void testElevatorButtonsMoreFloors(int floors) {
+        Elevator elevator = new Elevator(floors);
+        assertSame(floors, elevator.getFloorButtons().length);
     }
 
 }
