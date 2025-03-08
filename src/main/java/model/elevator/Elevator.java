@@ -1,10 +1,14 @@
 package model.elevator;
 
+import java.lang.reflect.Array;
+
 public class Elevator {
 
     private DoorsState doorsState;
 
     private int floor;
+
+    private int[] floorButtons;
 
     public enum DoorsState {closed, opened}
 
@@ -15,6 +19,7 @@ public class Elevator {
     public Elevator() {
         doorsState = DoorsState.opened;
         floor = 1;
+        floorButtons = new int[] {1, 2};
     }
 
     public boolean isTrue() {
@@ -41,6 +46,9 @@ public class Elevator {
         this.floor = floor;
     }
 
+    public int[] getFloorButtons() {
+        return floorButtons;
+    }
 
 }
 

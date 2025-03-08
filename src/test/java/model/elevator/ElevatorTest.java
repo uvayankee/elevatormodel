@@ -30,4 +30,11 @@ public class ElevatorTest {
         Elevator elevator = new Elevator();
         assertSame(1, elevator.getFloor());
     }
+
+    @Test
+    public void testElevatorButtons() {
+        Elevator elevator = new Elevator();
+        assertSame(2, elevator.getFloorButtons().length);
+    }
+
 }
