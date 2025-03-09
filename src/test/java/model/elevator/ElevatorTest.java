@@ -1,6 +1,5 @@
 package model.elevator;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -105,21 +104,26 @@ public class ElevatorTest {
 
     @Test
     public void TestRunAndCallSequence() throws ExecutionException, InterruptedException {
-        Elevator elevator = new Elevator(5);
+        int clockSpeed = 200;
+        Elevator elevator = new Elevator(5, clockSpeed);
         FutureTask<List<Action>> actionLog = elevator.startElevator();
         elevator.goToFloor(3);
-        Thread.sleep(500);
+        Thread.sleep(clockSpeed * 3);
+
         elevator.callElevator(4, ElevatorCall.Direction.down);
         while(elevator.getFloor() != 4) {
-            Thread.sleep(50);
+            Thread.sleep(clockSpeed / 2);
         }
+
         elevator.goToFloor(2);
         elevator.callElevator(3, ElevatorCall.Direction.down);
         while(elevator.getFloor() != 3) {
-            Thread.sleep(50);
+            Thread.sleep(clockSpeed / 2);
         }
+
         elevator.goToFloor(1);
         elevator.stopElevator();
-        System.out.println(actionLog.get());
+        assertEquals(16, actionLog.get().size());
     }
+
 }

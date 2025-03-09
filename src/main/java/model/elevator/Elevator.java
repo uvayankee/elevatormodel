@@ -18,12 +18,17 @@ public class Elevator implements Callable<List<Action>> {
     private final List<Action> actionLog;
     private final List<Action> queue;
     private final List<ElevatorCall> callQueue;
+    private final int clockSpeed;
 
     public Elevator() {
         this(2);
     }
 
     public Elevator(int maxFloor) {
+        this(maxFloor, 200);
+    }
+
+    public Elevator(int maxFloor, int clockSpeed) {
         doorsState = DoorsState.opened;
         floor = 1;
         nextDestination = 1;
@@ -32,6 +37,7 @@ public class Elevator implements Callable<List<Action>> {
         actionLog = new ArrayList<>();
         queue = new ArrayList<>();
         callQueue = new ArrayList<>();
+        this.clockSpeed = clockSpeed;
 
         for (int i = 1; i < maxFloor+1; i++) {
             floorButtons[i] = i;
@@ -51,7 +57,7 @@ public class Elevator implements Callable<List<Action>> {
             queue.add(Action.open);
             queue.add(Action.end);
         } else {
-            Thread.sleep(200);
+            Thread.sleep(clockSpeed);
             stopElevator();
         }
     }
@@ -121,7 +127,7 @@ public class Elevator implements Callable<List<Action>> {
         while (running) {
             handleInterrupts();
             handleTransitCalls();
-            Thread.sleep(200);
+            Thread.sleep(clockSpeed);
             if (!queue.isEmpty()) {
                 Action action = queue.remove(0);
                 switch (action) {
@@ -184,7 +190,6 @@ public class Elevator implements Callable<List<Action>> {
 
     public void handleTransitCalls() {
         Set<Integer> calledFloors = callQueue.stream().map(ElevatorCall::getFloor).collect(Collectors.toSet());
-        System.out.println(calledFloors);
         if (calledFloors.contains(floor)) {
             for(Iterator<ElevatorCall> iterator = callQueue.iterator(); iterator.hasNext(); ) {
                 ElevatorCall elevatorCall = iterator.next();
@@ -199,13 +204,11 @@ public class Elevator implements Callable<List<Action>> {
                     }
                 }
             }
-            System.out.println(callQueue.size());
         }
     }
 
     public void handleNextCall() {
         ElevatorCall call = callQueue.remove(0);
-        System.out.println(call);
         goToFloor(call.getFloor());
     }
 
