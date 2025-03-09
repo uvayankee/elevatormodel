@@ -19,3 +19,4 @@ Requirements
 - [ ] Elevator bank can hold multiple elevators
 - [ ] Elevator should be able to accommodate basements
 - [ ] Elevator should (optionally) skip floors if the building doesn't have them (13)
+- [x] Elevator needs to run on its own

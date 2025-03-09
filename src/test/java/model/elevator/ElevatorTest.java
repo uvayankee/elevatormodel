@@ -1,18 +1,16 @@
 package model.elevator;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.FutureTask;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 public class ElevatorTest {
-
-    @Test
-    public void testElevator() {
-        Elevator elevator = new Elevator();
-        assertTrue(elevator.isTrue());
-    }
 
     @Test
     public void testElevatorDoorsStartOpened() {
@@ -46,27 +44,33 @@ public class ElevatorTest {
     }
 
     @Test
-    public void testFloorMovement() {
+    public void testFloorMovement() throws ExecutionException, InterruptedException {
         Elevator elevator = new Elevator();
         assertSame(1, elevator.getFloor());
+        FutureTask<List<Action>> actionLog = elevator.startElevator();
         elevator.goToFloor(2);
+        elevator.stopElevator();
+        assertEquals(3, actionLog.get().size());
         assertSame(2, elevator.getFloor());
         assertSame(Elevator.DoorsState.opened, elevator.getDoorsState());
-        assertEquals(3, elevator.getActionLog().size());
     }
 
     @Test
-    public void testFloorMovementThreeFloors() {
+    public void testFloorMovementThreeFloors() throws ExecutionException, InterruptedException {
         Elevator elevator = new Elevator(3);
         assertSame(1, elevator.getFloor());
+        FutureTask<List<Action>> actionLog = elevator.startElevator();
         elevator.goToFloor(3);
+        elevator.stopElevator();
+        assertEquals(4, actionLog.get().size());
         assertSame(3, elevator.getFloor());
         assertSame(Elevator.DoorsState.opened, elevator.getDoorsState());
-        assertEquals(4, elevator.getActionLog().size());
+        actionLog = elevator.startElevator();
         elevator.goToFloor(1);
+        elevator.stopElevator();
+        assertEquals(8, actionLog.get().size());
         assertSame(1, elevator.getFloor());
         assertSame(Elevator.DoorsState.opened, elevator.getDoorsState());
-        assertEquals(8, elevator.getActionLog().size());
     }
 
 }
