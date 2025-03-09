@@ -14,6 +14,7 @@ public class Elevator implements Callable<List<Action>> {
     private final boolean[] interrupts;
     private final List<Action> actionLog;
     private final List<Action> queue;
+    private final List<ElevatorCall> callqueue;
 
     public Elevator() {
         this(2);
@@ -27,6 +28,8 @@ public class Elevator implements Callable<List<Action>> {
         interrupts = new boolean[maxFloor+1];
         actionLog = new ArrayList<>();
         queue = new ArrayList<>();
+        callqueue = new ArrayList<>();
+
         for (int i = 1; i < maxFloor+1; i++) {
             floorButtons[i] = i;
             interrupts[i] = false;
@@ -40,9 +43,18 @@ public class Elevator implements Callable<List<Action>> {
         return actionLogFuture;
     }
 
-    public void stopElevator() {
-        queue.add(Action.open);
-        queue.add(Action.end);
+    public void stopElevator() throws InterruptedException {
+        if(callqueue.isEmpty()) {
+            queue.add(Action.open);
+            queue.add(Action.end);
+        } else {
+            Thread.sleep(200);
+            stopElevator();
+        }
+    }
+
+    public void callElevator(int floor, ElevatorCall.Direction direction) {
+        callqueue.add(new ElevatorCall(floor, direction));
     }
 
     public List<Action> call() {
@@ -94,6 +106,8 @@ public class Elevator implements Callable<List<Action>> {
     }
 
     private List<Action> controlLoop() throws InterruptedException {
+        System.out.println("controlLoop");
+        System.out.println(queue);
         boolean running = true;
         while (running) {
             handleInterrupts();
@@ -116,9 +130,12 @@ public class Elevator implements Callable<List<Action>> {
                     case end:
                         running = false;
                         break;
+                    default:
+                        break;
                 }
             } else {
-                queue.add(Action.open);
+                System.out.println("Queue is empty");
+                handleNextCall();
             }
         }
         return actionLog;
@@ -156,7 +173,11 @@ public class Elevator implements Callable<List<Action>> {
         }
     }
 
-
+    public void handleNextCall() {
+        ElevatorCall call = callqueue.remove(0);
+        System.out.println(call);
+        goToFloor(call.getFloor());
+    }
 
     public int[] getFloorButtons() {
         return floorButtons;

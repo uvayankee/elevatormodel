@@ -91,7 +91,15 @@ public class ElevatorTest {
         elevator.goToFloor(5);
         elevator.goToFloor(3);
         elevator.stopElevator();
-        System.out.println(actionLog.get());
         assertEquals(8, actionLog.get().size());
+    }
+
+    @Test
+    public void TestCallElevator() throws ExecutionException, InterruptedException {
+        Elevator elevator = new Elevator(5);
+        FutureTask<List<Action>> actionLog = elevator.startElevator();
+        elevator.callElevator(4, ElevatorCall.Direction.down);
+        elevator.stopElevator();
+        System.out.println(actionLog.get());
     }
 }
