@@ -99,7 +99,7 @@ public class Elevator implements Callable<List<Action>> {
             handleInterrupts();
             Thread.sleep(200);
             if (!queue.isEmpty()) {
-                Action action = queue.removeFirst();
+                Action action = queue.remove(0);
                 switch (action) {
                     case open:
                         openDoors();
