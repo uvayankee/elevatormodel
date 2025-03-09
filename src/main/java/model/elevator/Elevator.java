@@ -10,6 +10,7 @@ public class Elevator implements Callable<List<Action>> {
     private final int[] floorButtons;
     private DoorsState doorsState;
     private int floor;
+    private int nextDestination;
     private final List<Action> actionLog;
     private final List<Action> queue;
 
@@ -20,6 +21,7 @@ public class Elevator implements Callable<List<Action>> {
     public Elevator(int maxFloor) {
         doorsState = DoorsState.opened;
         floor = 1;
+        nextDestination = 1;
         floorButtons = new int[maxFloor];
         actionLog = new ArrayList<>();
         queue = new ArrayList<>();
@@ -114,15 +116,17 @@ public class Elevator implements Callable<List<Action>> {
     }
 
     public void goToFloor(int floor) {
-        if(floor > this.floor) {
-            for (int i = this.floor; i < floor; i++) {
+        if (floor > this.nextDestination) {
+            for (int i = this.nextDestination; i < floor; i++) {
                 queue.add(Action.up);
             }
         } else {
-            for (int i = floor; i < this.floor; i++) {
+            for (int i = floor; i < this.nextDestination; i++) {
                 queue.add(Action.down);
             }
         }
+        queue.add(Action.open);
+        this.nextDestination = floor;
     }
 
     public int[] getFloorButtons() {

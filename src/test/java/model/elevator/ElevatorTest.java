@@ -58,19 +58,30 @@ public class ElevatorTest {
     @Test
     public void testFloorMovementThreeFloors() throws ExecutionException, InterruptedException {
         Elevator elevator = new Elevator(3);
-        assertSame(1, elevator.getFloor());
+
         FutureTask<List<Action>> actionLog = elevator.startElevator();
         elevator.goToFloor(3);
         elevator.stopElevator();
         assertEquals(4, actionLog.get().size());
         assertSame(3, elevator.getFloor());
         assertSame(Elevator.DoorsState.opened, elevator.getDoorsState());
+
         actionLog = elevator.startElevator();
         elevator.goToFloor(1);
         elevator.stopElevator();
         assertEquals(8, actionLog.get().size());
         assertSame(1, elevator.getFloor());
         assertSame(Elevator.DoorsState.opened, elevator.getDoorsState());
+    }
+
+    @Test
+    public void TestTwoFloorCalls() throws ExecutionException, InterruptedException {
+        Elevator elevator = new Elevator(5);
+        FutureTask<List<Action>> actionLog = elevator.startElevator();
+        elevator.goToFloor(3);
+        elevator.goToFloor(5);
+        elevator.stopElevator();
+        assertEquals(8, actionLog.get().size());
     }
 
 }
