@@ -11,14 +11,14 @@ import java.util.stream.Collectors;
 public class Elevator implements Callable<List<Action>> {
 
     private final int[] floorButtons;
-    private DoorsState doorsState;
-    private int floor;
-    private int nextDestination;
     private final boolean[] interrupts;
     private final List<Action> actionLog;
     private final List<Action> queue;
     private final List<ElevatorCall> callQueue;
     private final int clockSpeed;
+    private DoorsState doorsState;
+    private int floor;
+    private int nextDestination;
 
     public Elevator() {
         this(2);
@@ -32,14 +32,14 @@ public class Elevator implements Callable<List<Action>> {
         doorsState = DoorsState.opened;
         floor = 1;
         nextDestination = 1;
-        floorButtons = new int[maxFloor+1];
-        interrupts = new boolean[maxFloor+1];
+        floorButtons = new int[maxFloor + 1];
+        interrupts = new boolean[maxFloor + 1];
         actionLog = new ArrayList<>();
         queue = new ArrayList<>();
         callQueue = new ArrayList<>();
         this.clockSpeed = clockSpeed;
 
-        for (int i = 1; i < maxFloor+1; i++) {
+        for (int i = 1; i < maxFloor + 1; i++) {
             floorButtons[i] = i;
             interrupts[i] = false;
         }
@@ -53,7 +53,7 @@ public class Elevator implements Callable<List<Action>> {
     }
 
     public void stopElevator() throws InterruptedException {
-        if(callQueue.isEmpty()) {
+        if (callQueue.isEmpty()) {
             queue.add(Action.open);
             queue.add(Action.end);
         } else {
@@ -191,14 +191,14 @@ public class Elevator implements Callable<List<Action>> {
     public void handleTransitCalls() {
         Set<Integer> calledFloors = callQueue.stream().map(ElevatorCall::getFloor).collect(Collectors.toSet());
         if (calledFloors.contains(floor)) {
-            for(Iterator<ElevatorCall> iterator = callQueue.iterator(); iterator.hasNext(); ) {
+            for (Iterator<ElevatorCall> iterator = callQueue.iterator(); iterator.hasNext(); ) {
                 ElevatorCall elevatorCall = iterator.next();
                 if (elevatorCall.getFloor() == floor) {
-                    if(goingDown() && elevatorCall.getDirection() == ElevatorCall.Direction.down) {
+                    if (goingDown() && elevatorCall.getDirection() == ElevatorCall.Direction.down) {
                         iterator.remove();
                         openDoors();
                     }
-                    if(goingUp() && elevatorCall.getDirection() == ElevatorCall.Direction.up) {
+                    if (goingUp() && elevatorCall.getDirection() == ElevatorCall.Direction.up) {
                         iterator.remove();
                         openDoors();
                     }

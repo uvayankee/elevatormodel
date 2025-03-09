@@ -3,11 +3,13 @@ package model.elevator;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.FutureTask;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
 
 public class ElevatorTest {
 
@@ -32,14 +34,14 @@ public class ElevatorTest {
     @Test
     public void testElevatorButtons() {
         Elevator elevator = new Elevator();
-        assertSame(2, elevator.getFloorButtons().length-1);
+        assertSame(2, elevator.getFloorButtons().length - 1);
     }
 
     @ParameterizedTest
-    @ValueSource(ints = {2,3,4,5,6,7})
+    @ValueSource(ints = {2, 3, 4, 5, 6, 7})
     public void testElevatorButtonsMoreFloors(int floors) {
         Elevator elevator = new Elevator(floors);
-        assertSame(floors, elevator.getFloorButtons().length-1);
+        assertSame(floors, elevator.getFloorButtons().length - 1);
     }
 
     @Test
@@ -111,13 +113,13 @@ public class ElevatorTest {
         Thread.sleep(clockSpeed * 3);
 
         elevator.callElevator(4, ElevatorCall.Direction.down);
-        while(elevator.getFloor() != 4) {
+        while (elevator.getFloor() != 4) {
             Thread.sleep(clockSpeed / 2);
         }
 
         elevator.goToFloor(2);
         elevator.callElevator(3, ElevatorCall.Direction.down);
-        while(elevator.getFloor() != 3) {
+        while (elevator.getFloor() != 3) {
             Thread.sleep(clockSpeed / 2);
         }
 

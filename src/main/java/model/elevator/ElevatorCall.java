@@ -20,10 +20,9 @@ public class ElevatorCall implements Comparable<ElevatorCall> {
 
     @Override
     public int compareTo(ElevatorCall o) {
-        if(getFloor() == o.floor && getDirection() == o.direction) {
+        if (getFloor() == o.floor && getDirection() == o.direction) {
             return 0;
-        }
-        else return getFloor() < o.floor ? -1 : 1;
+        } else return getFloor() < o.floor ? -1 : 1;
     }
 
     public enum Direction {up, down}
