@@ -1,9 +1,12 @@
 package model.elevator;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.FutureTask;
+import java.util.stream.Collectors;
 
 public class Elevator implements Callable<List<Action>> {
 
@@ -99,6 +102,14 @@ public class Elevator implements Callable<List<Action>> {
         actionLog.add(Action.up);
     }
 
+    public boolean goingUp() {
+        return Action.up.equals(queue.get(0));
+    }
+
+    public boolean goingDown() {
+        return Action.down.equals(queue.get(0));
+    }
+
     public void goDown() {
         closeDoors();
         floor--;
@@ -109,6 +120,7 @@ public class Elevator implements Callable<List<Action>> {
         boolean running = true;
         while (running) {
             handleInterrupts();
+            handleTransitCalls();
             Thread.sleep(200);
             if (!queue.isEmpty()) {
                 Action action = queue.remove(0);
@@ -167,6 +179,27 @@ public class Elevator implements Callable<List<Action>> {
     public void handleInterrupts() {
         if (interrupts[floor]) {
             openDoors();
+        }
+    }
+
+    public void handleTransitCalls() {
+        Set<Integer> calledFloors = callQueue.stream().map(ElevatorCall::getFloor).collect(Collectors.toSet());
+        System.out.println(calledFloors);
+        if (calledFloors.contains(floor)) {
+            for(Iterator<ElevatorCall> iterator = callQueue.iterator(); iterator.hasNext(); ) {
+                ElevatorCall elevatorCall = iterator.next();
+                if (elevatorCall.getFloor() == floor) {
+                    if(goingDown() && elevatorCall.getDirection() == ElevatorCall.Direction.down) {
+                        iterator.remove();
+                        openDoors();
+                    }
+                    if(goingUp() && elevatorCall.getDirection() == ElevatorCall.Direction.up) {
+                        iterator.remove();
+                        openDoors();
+                    }
+                }
+            }
+            System.out.println(callQueue.size());
         }
     }
 

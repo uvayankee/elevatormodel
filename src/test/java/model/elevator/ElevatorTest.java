@@ -102,4 +102,24 @@ public class ElevatorTest {
         elevator.stopElevator();
         assertEquals(5, actionLog.get().size());
     }
+
+    @Test
+    public void TestRunAndCallSequence() throws ExecutionException, InterruptedException {
+        Elevator elevator = new Elevator(5);
+        FutureTask<List<Action>> actionLog = elevator.startElevator();
+        elevator.goToFloor(3);
+        Thread.sleep(500);
+        elevator.callElevator(4, ElevatorCall.Direction.down);
+        while(elevator.getFloor() != 4) {
+            Thread.sleep(50);
+        }
+        elevator.goToFloor(2);
+        elevator.callElevator(3, ElevatorCall.Direction.down);
+        while(elevator.getFloor() != 3) {
+            Thread.sleep(50);
+        }
+        elevator.goToFloor(1);
+        elevator.stopElevator();
+        System.out.println(actionLog.get());
+    }
 }
