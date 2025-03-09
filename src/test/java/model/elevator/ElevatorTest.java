@@ -100,6 +100,6 @@ public class ElevatorTest {
         FutureTask<List<Action>> actionLog = elevator.startElevator();
         elevator.callElevator(4, ElevatorCall.Direction.down);
         elevator.stopElevator();
-        System.out.println(actionLog.get());
+        assertEquals(5, actionLog.get().size());
     }
 }
