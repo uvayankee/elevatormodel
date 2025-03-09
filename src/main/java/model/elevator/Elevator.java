@@ -11,6 +11,7 @@ public class Elevator implements Callable<List<Action>> {
     private DoorsState doorsState;
     private int floor;
     private int nextDestination;
+    private final boolean[] interrupts;
     private final List<Action> actionLog;
     private final List<Action> queue;
 
@@ -22,11 +23,13 @@ public class Elevator implements Callable<List<Action>> {
         doorsState = DoorsState.opened;
         floor = 1;
         nextDestination = 1;
-        floorButtons = new int[maxFloor];
+        floorButtons = new int[maxFloor+1];
+        interrupts = new boolean[maxFloor+1];
         actionLog = new ArrayList<>();
         queue = new ArrayList<>();
-        for (int i = 0; i < maxFloor; i++) {
-            floorButtons[i] = i + 1;
+        for (int i = 1; i < maxFloor+1; i++) {
+            floorButtons[i] = i;
+            interrupts[i] = false;
         }
     }
 
@@ -43,7 +46,11 @@ public class Elevator implements Callable<List<Action>> {
     }
 
     public List<Action> call() {
-        return this.controlLoop();
+        try {
+            return this.controlLoop();
+        } catch (InterruptedException e) {
+            return new ArrayList<>();
+        }
     }
 
     public DoorsState getDoorsState() {
@@ -86,9 +93,11 @@ public class Elevator implements Callable<List<Action>> {
         actionLog.add(Action.down);
     }
 
-    private List<Action> controlLoop() {
+    private List<Action> controlLoop() throws InterruptedException {
         boolean running = true;
         while (running) {
+            handleInterrupts();
+            Thread.sleep(200);
             if (!queue.isEmpty()) {
                 Action action = queue.removeFirst();
                 switch (action) {
@@ -117,17 +126,37 @@ public class Elevator implements Callable<List<Action>> {
 
     public void goToFloor(int floor) {
         if (floor > this.nextDestination) {
-            for (int i = this.nextDestination; i < floor; i++) {
-                queue.add(Action.up);
+            if (floor < this.floor) {
+                addInterrupt(floor);
+            } else {
+                for (int i = this.nextDestination; i < floor; i++) {
+                    queue.add(Action.up);
+                }
             }
         } else {
-            for (int i = floor; i < this.nextDestination; i++) {
-                queue.add(Action.down);
+            if (floor > this.floor) {
+                addInterrupt(floor);
+            } else {
+                for (int i = floor; i < this.nextDestination; i++) {
+                    queue.add(Action.down);
+                }
             }
         }
         queue.add(Action.open);
         this.nextDestination = floor;
     }
+
+    public void addInterrupt(int floor) {
+        interrupts[floor] = true;
+    }
+
+    public void handleInterrupts() {
+        if (interrupts[floor]) {
+            openDoors();
+        }
+    }
+
+
 
     public int[] getFloorButtons() {
         return floorButtons;

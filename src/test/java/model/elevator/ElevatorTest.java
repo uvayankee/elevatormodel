@@ -84,4 +84,14 @@ public class ElevatorTest {
         assertEquals(8, actionLog.get().size());
     }
 
+    @Test
+    public void TestTwoFloorCallsInverse() throws ExecutionException, InterruptedException {
+        Elevator elevator = new Elevator(5);
+        FutureTask<List<Action>> actionLog = elevator.startElevator();
+        elevator.goToFloor(5);
+        elevator.goToFloor(3);
+        elevator.stopElevator();
+        System.out.println(actionLog.get());
+        assertEquals(8, actionLog.get().size());
+    }
 }
