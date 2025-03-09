@@ -33,14 +33,14 @@ public class ElevatorTest {
     @Test
     public void testElevatorButtons() {
         Elevator elevator = new Elevator();
-        assertSame(2, elevator.getFloorButtons().length);
+        assertSame(2, elevator.getFloorButtons().length-1);
     }
 
     @ParameterizedTest
     @ValueSource(ints = {2,3,4,5,6,7})
     public void testElevatorButtonsMoreFloors(int floors) {
         Elevator elevator = new Elevator(floors);
-        assertSame(floors, elevator.getFloorButtons().length);
+        assertSame(floors, elevator.getFloorButtons().length-1);
     }
 
     @Test
