@@ -218,8 +218,10 @@ public class Elevator implements Callable<List<Action>> {
     }
 
     public void handleNextCall() {
-        ElevatorCall call = callQueue.remove(0);
-        goToFloor(call.getFloor());
+        if (!callQueue.isEmpty()) {
+            ElevatorCall call = callQueue.remove(0);
+            goToFloor(call.getFloor());
+        }
     }
 
     public int[] getFloorButtons() {
