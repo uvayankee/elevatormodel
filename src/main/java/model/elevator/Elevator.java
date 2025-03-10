@@ -157,6 +157,11 @@ public class Elevator implements Callable<List<Action>> {
     }
 
     public void goToFloor(int floor) {
+        if (floor >= this.floorButtons.length) {
+            floor = this.floorButtons.length - 1;
+        } else if (floor < 1) {
+            floor = 1;
+        }
         if (floor > this.nextDestination) {
             if (floor < this.floor) {
                 addInterrupt(floor);
