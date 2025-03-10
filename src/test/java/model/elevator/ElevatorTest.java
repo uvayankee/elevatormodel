@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.FutureTask;
@@ -53,12 +54,13 @@ public class ElevatorTest {
 
     @Test
     public void testFloorMovement() throws ExecutionException, InterruptedException {
+        List<Action> expectedActions = Arrays.asList(Action.close, Action.up, Action.open);
         Elevator elevator = new Elevator();
         assertSame(1, elevator.getFloor());
         FutureTask<List<Action>> actionLog = elevator.startElevator();
         elevator.goToFloor(2);
         elevator.stopElevator();
-        assertEquals(3, actionLog.get().size());
+        assertEquals(expectedActions, actionLog.get());
         assertSame(2, elevator.getFloor());
         assertSame(Elevator.DoorsState.opened, elevator.getDoorsState());
     }
@@ -67,52 +69,67 @@ public class ElevatorTest {
     public void testFloorMovementThreeFloors() throws ExecutionException, InterruptedException {
         Elevator elevator = new Elevator(3);
 
+        List<Action> expectedActions = Arrays.asList(Action.close, Action.up, Action.up, Action.open,
+                Action.close, Action.down, Action.down, Action.open);
+
         FutureTask<List<Action>> actionLog = elevator.startElevator();
         elevator.goToFloor(3);
         elevator.stopElevator();
-        assertEquals(4, actionLog.get().size());
+        assertEquals(expectedActions.subList(0, 4), actionLog.get());
         assertSame(3, elevator.getFloor());
         assertSame(Elevator.DoorsState.opened, elevator.getDoorsState());
 
         actionLog = elevator.startElevator();
         elevator.goToFloor(1);
         elevator.stopElevator();
-        assertEquals(8, actionLog.get().size());
+        assertEquals(expectedActions, actionLog.get());
         assertSame(1, elevator.getFloor());
         assertSame(Elevator.DoorsState.opened, elevator.getDoorsState());
     }
 
     @Test
     public void TestTwoFloorCalls() throws ExecutionException, InterruptedException {
+        List<Action> expectedActions = Arrays.asList(Action.close, Action.up, Action.up, Action.open,
+                Action.close, Action.up, Action.up, Action.open);
+
         Elevator elevator = new Elevator(5);
         FutureTask<List<Action>> actionLog = elevator.startElevator();
         elevator.goToFloor(3);
         elevator.goToFloor(5);
         elevator.stopElevator();
-        assertEquals(8, actionLog.get().size());
+        assertEquals(expectedActions, actionLog.get());
     }
 
     @Test
     public void TestTwoFloorCallsInverse() throws ExecutionException, InterruptedException {
+        List<Action> expectedActions = Arrays.asList(Action.close, Action.up, Action.up, Action.open,
+                Action.close, Action.up, Action.up, Action.open);
+
         Elevator elevator = new Elevator(5);
         FutureTask<List<Action>> actionLog = elevator.startElevator();
         elevator.goToFloor(5);
         elevator.goToFloor(3);
         elevator.stopElevator();
-        assertEquals(8, actionLog.get().size());
+        assertEquals(expectedActions, actionLog.get());
     }
 
     @Test
     public void TestCallElevator() throws ExecutionException, InterruptedException {
+        List<Action> expectedActions = Arrays.asList(Action.close, Action.up, Action.up, Action.up, Action.open);
+
         Elevator elevator = new Elevator(5);
         FutureTask<List<Action>> actionLog = elevator.startElevator();
         elevator.callElevator(4, Action.down);
         elevator.stopElevator();
-        assertEquals(5, actionLog.get().size());
+        assertEquals(expectedActions, actionLog.get());
     }
 
     @Test
     public void TestRunAndCallSequence() throws ExecutionException, InterruptedException {
+        List<Action> expectedActions = Arrays.asList(Action.close, Action.up, Action.up, Action.open,
+                Action.close, Action.up, Action.open, Action.close, Action.down, Action.open, Action.close, Action.down,
+                Action.open, Action.close, Action.down, Action.open);
+
         int clockSpeed = 200;
         Elevator elevator = new Elevator(5, clockSpeed);
         FutureTask<List<Action>> actionLog = elevator.startElevator();
@@ -132,7 +149,7 @@ public class ElevatorTest {
 
         elevator.goToFloor(1);
         elevator.stopElevator();
-        assertEquals(16, actionLog.get().size());
+        assertEquals(expectedActions, actionLog.get());
     }
 
 }
