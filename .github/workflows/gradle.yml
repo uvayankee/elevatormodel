@@ -38,7 +38,7 @@ jobs:
     - name: Build and test with Gradle Wrapper
       run: |
         ./gradlew build test
-        echo "$(find /home/.gradle/wrapper/dists/ -name gradle | xargs ls -tr | tail -n 1 | xargs dirname)" >> $GITHUB_PATH
+        echo "$(find /home/ -name gradle | xargs ls -tr | tail -n 1 | xargs dirname)" >> $GITHUB_PATH
     # add gradle to path to prevent error
 
     - name: Publish Test Results
@@ -74,7 +74,7 @@ jobs:
         distribution: 'temurin'
     - name: Init Gradle to PATH
       run: |
-        echo "$(find /home/.gradle/wrapper/dists/ -name gradle | xargs ls -tr | tail -n 1 | xargs dirname)" >> $GITHUB_PATH
+        echo "$(find /home/ -name gradle | xargs ls -tr | tail -n 1 | xargs dirname)" >> $GITHUB_PATH
       
 
       # Generates and submits a dependency graph, enabling Dependabot Alerts for all project dependencies.
