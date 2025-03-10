@@ -54,15 +54,19 @@ public class Elevator implements Callable<List<Action>> {
 
     public void stopElevator() throws InterruptedException {
         if (callQueue.isEmpty()) {
-            queue.add(Action.open);
-            queue.add(Action.end);
+            queueOpen();
+            queueEnd();
         } else {
             Thread.sleep(clockSpeed);
             stopElevator();
         }
     }
 
-    public void callElevator(int floor, ElevatorCall.Direction direction) {
+    private void queueEnd() {
+        queue.add(Action.end);
+    }
+
+    public void callElevator(int floor, Action direction) {
         callQueue.add(new ElevatorCall(floor, direction));
     }
 
@@ -76,10 +80,6 @@ public class Elevator implements Callable<List<Action>> {
 
     public DoorsState getDoorsState() {
         return doorsState;
-    }
-
-    public boolean isTrue() {
-        return true;
     }
 
     public DoorsState openDoors() {
@@ -108,12 +108,8 @@ public class Elevator implements Callable<List<Action>> {
         actionLog.add(Action.up);
     }
 
-    public boolean goingUp() {
-        return Action.up.equals(queue.get(0));
-    }
-
-    public boolean goingDown() {
-        return Action.down.equals(queue.get(0));
+    public boolean isSameDirection(Action direction) {
+        return direction.equals(queue.get(0));
     }
 
     public void goDown() {
@@ -157,30 +153,40 @@ public class Elevator implements Callable<List<Action>> {
     }
 
     public void goToFloor(int floor) {
+        int checkedFloor = boundsCheckFloor(floor);
+        if (isInterruptNeeded(checkedFloor)) {
+            addInterrupt(checkedFloor);
+        } else if (checkedFloor > this.nextDestination) {
+            queueMovement(checkedFloor - this.nextDestination, Action.up);
+        } else if (checkedFloor < this.nextDestination) {
+            queueMovement(checkedFloor - this.nextDestination, Action.down);
+        }
+        queueOpen();
+        this.nextDestination = checkedFloor;
+    }
+
+    private void queueOpen() {
+        queue.add(Action.open);
+    }
+
+    private boolean isInterruptNeeded(int checkedFloor) {
+        return (checkedFloor > this.nextDestination && checkedFloor < this.floor)
+                || (checkedFloor < this.nextDestination && checkedFloor > this.floor);
+    }
+
+    private void queueMovement(int numberOfFloors, Action direction) {
+        for (int i = 0; i < Math.abs(numberOfFloors); i++) {
+            queue.add(direction);
+        }
+    }
+
+    private int boundsCheckFloor(int floor) {
         if (floor >= this.floorButtons.length) {
             floor = this.floorButtons.length - 1;
         } else if (floor < 1) {
             floor = 1;
         }
-        if (floor > this.nextDestination) {
-            if (floor < this.floor) {
-                addInterrupt(floor);
-            } else {
-                for (int i = this.nextDestination; i < floor; i++) {
-                    queue.add(Action.up);
-                }
-            }
-        } else {
-            if (floor > this.floor) {
-                addInterrupt(floor);
-            } else {
-                for (int i = floor; i < this.nextDestination; i++) {
-                    queue.add(Action.down);
-                }
-            }
-        }
-        queue.add(Action.open);
-        this.nextDestination = floor;
+        return floor;
     }
 
     public void addInterrupt(int floor) {
@@ -195,21 +201,20 @@ public class Elevator implements Callable<List<Action>> {
 
     public void handleTransitCalls() {
         Set<Integer> calledFloors = callQueue.stream().map(ElevatorCall::getFloor).collect(Collectors.toSet());
-        if (calledFloors.contains(floor)) {
+        if (calledFloors.contains(getFloor())) {
             for (Iterator<ElevatorCall> iterator = callQueue.iterator(); iterator.hasNext(); ) {
-                ElevatorCall elevatorCall = iterator.next();
-                if (elevatorCall.getFloor() == floor) {
-                    if (goingDown() && elevatorCall.getDirection() == ElevatorCall.Direction.down) {
-                        iterator.remove();
-                        openDoors();
-                    }
-                    if (goingUp() && elevatorCall.getDirection() == ElevatorCall.Direction.up) {
-                        iterator.remove();
-                        openDoors();
-                    }
+                if (isTransitCall(iterator.next())) {
+                    iterator.remove();
+                    openDoors();
                 }
             }
         }
+    }
+
+    private boolean isTransitCall(ElevatorCall elevatorCall) {
+        return elevatorCall.getFloor() == getFloor() &&
+                ((isSameDirection(Action.down) && elevatorCall.getDirection() == Action.down)
+                || (isSameDirection(Action.up) && elevatorCall.getDirection() == Action.up));
     }
 
     public void handleNextCall() {

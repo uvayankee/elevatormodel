@@ -3,18 +3,21 @@ package model.elevator;
 public class ElevatorCall implements Comparable<ElevatorCall> {
 
     private final int floor;
-    private final Direction direction;
+    private final Action direction;
 
-    public ElevatorCall(int floor, Direction direction) {
+    public ElevatorCall(int floor, Action direction) {
         this.floor = floor;
-        this.direction = direction;
+        if (direction == Action.down || direction == Action.up) {
+            this.direction = direction;
+        }
+        else throw new IllegalArgumentException();
     }
 
     public int getFloor() {
         return floor;
     }
 
-    public Direction getDirection() {
+    public Action getDirection() {
         return direction;
     }
 

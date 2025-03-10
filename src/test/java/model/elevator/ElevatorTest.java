@@ -26,6 +26,13 @@ public class ElevatorTest {
     }
 
     @Test
+    public void testElevatorDoorsReOpen() {
+        Elevator elevator = new Elevator();
+        assertSame(Elevator.DoorsState.closed, elevator.closeDoors());
+        assertSame(Elevator.DoorsState.opened, elevator.openDoors());
+    }
+
+    @Test
     public void testElevatorInitialFloor() {
         Elevator elevator = new Elevator();
         assertSame(1, elevator.getFloor());
@@ -99,7 +106,7 @@ public class ElevatorTest {
     public void TestCallElevator() throws ExecutionException, InterruptedException {
         Elevator elevator = new Elevator(5);
         FutureTask<List<Action>> actionLog = elevator.startElevator();
-        elevator.callElevator(4, ElevatorCall.Direction.down);
+        elevator.callElevator(4, Action.down);
         elevator.stopElevator();
         assertEquals(5, actionLog.get().size());
     }
@@ -112,13 +119,13 @@ public class ElevatorTest {
         elevator.goToFloor(3);
         Thread.sleep(clockSpeed * 3);
 
-        elevator.callElevator(4, ElevatorCall.Direction.down);
+        elevator.callElevator(4, Action.down);
         while (elevator.getFloor() != 4) {
             Thread.sleep(clockSpeed / 2);
         }
 
         elevator.goToFloor(2);
-        elevator.callElevator(3, ElevatorCall.Direction.down);
+        elevator.callElevator(3, Action.down);
         while (elevator.getFloor() != 3) {
             Thread.sleep(clockSpeed / 2);
         }
