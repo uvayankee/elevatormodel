@@ -38,8 +38,6 @@ jobs:
     - name: Build and test with Gradle Wrapper
       run: |
         ./gradlew build test
-        echo "$(find /home/ -name gradle | xargs ls -tr | tail -n 1 | xargs dirname)" >> $GITHUB_PATH
-    # add gradle to path to prevent error
 
     - name: Publish Test Results
       uses: EnricoMi/publish-unit-test-result-action@v2
@@ -72,10 +70,7 @@ jobs:
       with:
         java-version: '17'
         distribution: 'temurin'
-    - name: Init Gradle to PATH
-      run: |
-        echo "$(find /home/ -name gradle | xargs ls -tr | tail -n 1 | xargs dirname)" >> $GITHUB_PATH
-      
+
 
       # Generates and submits a dependency graph, enabling Dependabot Alerts for all project dependencies.
     # See: https://github.com/gradle/actions/blob/main/dependency-submission/README.md
