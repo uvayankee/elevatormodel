@@ -23,11 +23,13 @@ request is a bit more involved, and would be the place where further modularizin
 envision encapsulating the elevators and the bank and sending messages between them to handle the state.
 
 I like the central control mechanism of just operating off of the queue.  The interrupts and call handling deviate
-from that by forcing the doors open at times rather than adding "open" to the queue.  I also like the fault tolerance
-on going up or down, whereby the doors are always checked closed before movement.  I do not like most of the logic
-design inside the functions, as they feel too wordy.  And while kicking the Elevator class itself into a thread allowed
-me to better mimic its real world usage, it made the other functions become less directly testable, which is something
-I would prefer to refactor back out.
+from that by forcing the doors open at times rather than adding "open" to the front of the queue.  I also like the
+fault tolerance on going up or down, whereby the doors are always checked closed before movement.  I do not like most 
+of the logic design inside the functions, as they feel too wordy.  (I have refactored this logic a little bit now, and
+it feels better, if not great.)
+
+And while kicking the Elevator class itself into a thread allowed me to better mimic its real world usage,
+it made the other functions become less directly testable, which is something I would prefer to refactor back out.
 
 Other things of note: When you review the commit log (which you should - I left some dummies in there), my first commit
 was to build up a pipeline.  While this has no "production" endpoint, "The pipeline to production is feature 0" is a
