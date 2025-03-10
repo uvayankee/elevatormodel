@@ -34,11 +34,12 @@ jobs:
     # See: https://github.com/gradle/actions/blob/main/setup-gradle/README.md
     - name: Setup Gradle
       uses: gradle/actions/setup-gradle@af1da67850ed9a4cedd57bfd976089dd991e2582 # v4.0.0
-      with:
-        gradle-home-cache-cleanup: true
 
     - name: Build and test with Gradle Wrapper
-      run: ./gradlew build test
+      run: |
+        ./gradlew build test
+        echo "$(find /home/.gradle/wrapper/dists/ -name gradle | xargs ls -tr | tail -n 1 | xargs dirname)" >> $GITHUB_PATH
+    # add gradle to path to prevent error
 
     - name: Publish Test Results
       uses: EnricoMi/publish-unit-test-result-action@v2
@@ -76,5 +77,4 @@ jobs:
     # See: https://github.com/gradle/actions/blob/main/dependency-submission/README.md
     - name: Generate and submit dependency graph
       uses: gradle/actions/dependency-submission@af1da67850ed9a4cedd57bfd976089dd991e2582 # v4.0.0
-      with:
-        gradle-home-cache-cleanup: true
+
