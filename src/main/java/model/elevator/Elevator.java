@@ -10,6 +10,7 @@ import java.util.stream.Collectors;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 
 public class Elevator implements Callable<List<Action>> {
 
@@ -156,34 +157,46 @@ public class Elevator implements Callable<List<Action>> {
         System.out.println("[Elevator.controlLoop] INFO: " + Thread.currentThread().getName() + " entering control loop. Running: " + this.running);
         while (this.running) {
             try {
+                if (!this.running) break; // Check at the start of the loop iteration
+
                 handleInterrupts();
+                if (!this.running) break; // Check after handleInterrupts
+
                 handleTransitCalls();
+                if (!this.running) break; // Check after handleTransitCalls
 
-                System.out.println("[Elevator.controlLoop] INFO: " + Thread.currentThread().getName() + " waiting on queue.take(). Running: " + this.running);
-                Action action = queue.take(); // This can throw InterruptedException
-                System.out.println("[Elevator.controlLoop] INFO: " + Thread.currentThread().getName() + " took action: " + action + ". Running: " + this.running);
+                System.out.println("[Elevator.controlLoop] INFO: " + Thread.currentThread().getName() + " polling queue. Running: " + this.running);
+                Action action = queue.poll(100, TimeUnit.MILLISECONDS); // Use poll with timeout
+                System.out.println("[Elevator.controlLoop] INFO: " + Thread.currentThread().getName() + " polled action: " + (action != null ? action : "null") + ". Running: " + this.running);
 
-                switch (action) {
-                    case open:
-                        openDoors();
-                        break;
-                    case close:
-                        closeDoors();
-                        break;
-                    case up:
-                        goUp();
-                        break;
-                    case down:
-                        goDown();
-                        break;
-                    // Action.end is no longer handled here; loop terminates via this.running
-                    default:
-                        break;
-                }
-                // Only sleep if running is still true after processing an action.
-                if (this.running) {
-                    System.out.println("[Elevator.controlLoop] INFO: " + Thread.currentThread().getName() + " sleeping for " + clockSpeed + "ms. Running: " + this.running);
-                    Thread.sleep(clockSpeed); // This can also throw InterruptedException
+                if (action != null) {
+                    switch (action) {
+                        case open:
+                            openDoors();
+                            break;
+                        case close:
+                            closeDoors();
+                            break;
+                        case up:
+                            goUp();
+                            break;
+                        case down:
+                            goDown();
+                            break;
+                        default:
+                            // No action or unknown action
+                            break;
+                    }
+                    if (!this.running) break; // Check after processing action
+
+                    // Only sleep if running is still true and an action was processed.
+                    if (this.running && clockSpeed > 0) {
+                        System.out.println("[Elevator.controlLoop] INFO: " + Thread.currentThread().getName() + " sleeping for " + clockSpeed + "ms. Running: " + this.running);
+                        Thread.sleep(clockSpeed); // This can also throw InterruptedException
+                    }
+                } else {
+                    // Action was null (poll timed out). Loop will continue, checking `this.running`.
+                    // No specific sleep needed here as poll already waited.
                 }
             } catch (InterruptedException e) {
                 System.out.println("[Elevator.controlLoop] ERROR: " + Thread.currentThread().getName() + " InterruptedException. Running: " + this.running);
@@ -196,8 +209,10 @@ public class Elevator implements Callable<List<Action>> {
                 }
             }
 
-            if (this.running && queue.isEmpty()) {
-                System.out.println("[Elevator.controlLoop] INFO: " + Thread.currentThread().getName() + " queue empty, handling next call. Running: " + this.running);
+            if (!this.running) break; // Check before deciding to handle next call
+
+            if (this.running && queue.isEmpty()) { // If primary queue is empty, check call queue
+                System.out.println("[Elevator.controlLoop] INFO: " + Thread.currentThread().getName() + " primary queue empty, handling next call. Running: " + this.running);
                 handleNextCall();
             }
         }
@@ -283,19 +298,24 @@ public class Elevator implements Callable<List<Action>> {
     }
 
     public void handleNextCall() {
-        if (!callQueue.isEmpty()) {
-            try {
-                System.out.println("[Elevator.handleNextCall] INFO: " + Thread.currentThread().getName() + " waiting on callQueue.take().");
-                ElevatorCall call = callQueue.take(); // This can throw InterruptedException
+        if (!this.running) return; // Check running status at the beginning
+
+        // No need to check callQueue.isEmpty() here, poll will handle it.
+        try {
+            System.out.println("[Elevator.handleNextCall] INFO: " + Thread.currentThread().getName() + " polling callQueue.");
+            ElevatorCall call = callQueue.poll(100, TimeUnit.MILLISECONDS); // Use poll with timeout
+            System.out.println("[Elevator.handleNextCall] INFO: " + Thread.currentThread().getName() + " polled call: " + (call != null ? call.getFloor() + " " + call.getDirection() : "null") + ". Running: " + this.running);
+
+            if (call != null) {
                 goToFloor(call.getFloor());
-            } catch (InterruptedException e) {
-                System.out.println("[Elevator.handleNextCall] ERROR: " + Thread.currentThread().getName() + " InterruptedException in handleNextCall. Running: " + this.running);
-                if (!this.running) {
-                    // If stopping, don't process more calls from queue
-                    return; 
-                }
-                Thread.currentThread().interrupt(); // Preserve interrupt if for other reasons
             }
+        } catch (InterruptedException e) {
+            System.out.println("[Elevator.handleNextCall] ERROR: " + Thread.currentThread().getName() + " InterruptedException in handleNextCall. Running: " + this.running);
+            if (!this.running) {
+                // If stopping, just return.
+                return;
+            }
+            Thread.currentThread().interrupt(); // Preserve interrupt if for other reasons
         }
     }
 

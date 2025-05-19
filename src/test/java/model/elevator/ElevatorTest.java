@@ -59,6 +59,11 @@ public class ElevatorTest {
         assertSame(1, elevator.getFloor());
         FutureTask<List<Action>> actionLog = elevator.startElevator();
         elevator.goToFloor(2);
+        try {
+            Thread.sleep(1000); // Give elevator time to process
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
         elevator.stopElevator();
         assertEquals(expectedActions, actionLog.get());
         assertSame(2, elevator.getFloor());
@@ -74,6 +79,11 @@ public class ElevatorTest {
 
         FutureTask<List<Action>> actionLog = elevator.startElevator();
         elevator.goToFloor(3);
+        try {
+            Thread.sleep(1000); // Give elevator time to process
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
         elevator.stopElevator();
         assertEquals(expectedActions.subList(0, 4), actionLog.get());
         assertSame(3, elevator.getFloor());
@@ -81,6 +91,11 @@ public class ElevatorTest {
 
         actionLog = elevator.startElevator();
         elevator.goToFloor(1);
+        try {
+            Thread.sleep(1000); // Give elevator time to process
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
         elevator.stopElevator();
         assertEquals(expectedActions, actionLog.get());
         assertSame(1, elevator.getFloor());
@@ -96,6 +111,11 @@ public class ElevatorTest {
         FutureTask<List<Action>> actionLog = elevator.startElevator();
         elevator.goToFloor(3);
         elevator.goToFloor(5);
+        try {
+            Thread.sleep(2000); // Give elevator more time to process both floor calls
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
         elevator.stopElevator();
         assertEquals(expectedActions, actionLog.get());
     }
@@ -109,6 +129,11 @@ public class ElevatorTest {
         FutureTask<List<Action>> actionLog = elevator.startElevator();
         elevator.goToFloor(5);
         elevator.goToFloor(3);
+        try {
+            Thread.sleep(1000); // Give elevator time to process
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
         elevator.stopElevator();
         assertEquals(expectedActions, actionLog.get());
     }
@@ -120,6 +145,11 @@ public class ElevatorTest {
         Elevator elevator = new Elevator(5);
         FutureTask<List<Action>> actionLog = elevator.startElevator();
         elevator.callElevator(4, Action.down);
+        try {
+            Thread.sleep(1000); // Give elevator time to process
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
         elevator.stopElevator();
         assertEquals(expectedActions, actionLog.get());
     }
@@ -148,6 +178,11 @@ public class ElevatorTest {
         }
 
         elevator.goToFloor(1);
+        try {
+            Thread.sleep(1000); // Give elevator time to process
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
         elevator.stopElevator();
         assertEquals(expectedActions, actionLog.get());
     }
