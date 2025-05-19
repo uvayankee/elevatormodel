@@ -7,18 +7,25 @@ import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.FutureTask;
 import java.util.stream.Collectors;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 
 public class Elevator implements Callable<List<Action>> {
 
     private final int[] floorButtons;
     private final boolean[] interrupts;
     private final List<Action> actionLog;
-    private final List<Action> queue;
-    private final List<ElevatorCall> callQueue;
+    private final BlockingQueue<Action> queue;
+    private final BlockingQueue<ElevatorCall> callQueue;
     private final int clockSpeed;
-    private DoorsState doorsState;
-    private int floor;
-    private int nextDestination;
+    private volatile DoorsState doorsState;
+    private volatile int floor;
+    private volatile int nextDestination;
+    private volatile boolean running;
+    private Thread elevatorThread;
+    private FutureTask<List<Action>> actionLogFuture;
 
     public Elevator() {
         this(2);
@@ -29,14 +36,16 @@ public class Elevator implements Callable<List<Action>> {
     }
 
     public Elevator(int maxFloor, int clockSpeed) {
+        this.running = false; // Initialize running state
+        this.actionLogFuture = null; // Initialize actionLogFuture
         doorsState = DoorsState.opened;
         floor = 1;
         nextDestination = 1;
         floorButtons = new int[maxFloor + 1];
         interrupts = new boolean[maxFloor + 1];
-        actionLog = new ArrayList<>();
-        queue = new ArrayList<>();
-        callQueue = new ArrayList<>();
+        actionLog = new CopyOnWriteArrayList<>();
+        queue = new LinkedBlockingQueue<>();
+        callQueue = new LinkedBlockingQueue<>();
         this.clockSpeed = clockSpeed;
 
         for (int i = 1; i < maxFloor + 1; i++) {
@@ -45,44 +54,70 @@ public class Elevator implements Callable<List<Action>> {
         }
     }
 
-    public FutureTask<List<Action>> startElevator() {
-        FutureTask<List<Action>> actionLogFuture = new FutureTask<>(this);
-        Thread thread = new Thread(actionLogFuture);
-        thread.start();
-        return actionLogFuture;
+    public synchronized FutureTask<List<Action>> startElevator() {
+        if (this.elevatorThread != null && this.elevatorThread.isAlive()) {
+            System.out.println("[Elevator.startElevator] INFO: Elevator thread " + this.elevatorThread.getName() + " already alive.");
+            return this.actionLogFuture; // Already running, return existing future
+        }
+
+        // If not running or never started (or stopped and restarted), create and start a new thread
+        this.running = true;
+        this.actionLogFuture = new FutureTask<>(this);
+        this.elevatorThread = new Thread(this.actionLogFuture);
+        this.elevatorThread.setName("ElevatorThread-" + System.currentTimeMillis());
+        System.out.println("[Elevator.startElevator] INFO: Starting elevator thread " + this.elevatorThread.getName());
+        this.elevatorThread.start();
+        return this.actionLogFuture;
     }
 
-    public void stopElevator() throws InterruptedException {
-        if (callQueue.isEmpty()) {
-            queueOpen();
-            queueEnd();
-        } else {
-            Thread.sleep(clockSpeed);
-            stopElevator();
+    public Thread getElevatorThread() {
+        return elevatorThread;
+    }
+
+    public void stopElevator() {
+        System.out.println("[Elevator.stopElevator] INFO: Stopping elevator thread " + (this.elevatorThread != null ? this.elevatorThread.getName() : "null"));
+        if (this.elevatorThread != null) { // Check if thread exists before logging its name
+            System.out.println("[Elevator.stopElevator] INFO: Setting running = false for " + this.elevatorThread.getName());
+        }
+        this.running = false;
+        if (this.elevatorThread != null && this.elevatorThread.isAlive()) {
+            System.out.println("[Elevator.stopElevator] INFO: Interrupting thread " + this.elevatorThread.getName());
+            this.elevatorThread.interrupt();
         }
     }
 
-    private void queueEnd() {
-        queue.add(Action.end);
-    }
+    // Removed queueEnd method as it's no longer used
 
     public void callElevator(int floor, Action direction) {
-        callQueue.add(new ElevatorCall(floor, direction));
+        try {
+            callQueue.put(new ElevatorCall(floor, direction));
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
     }
 
     public List<Action> call() {
+        System.out.println("[Elevator.call] INFO: Elevator thread " + Thread.currentThread().getName() + " started.");
         try {
             return this.controlLoop();
         } catch (InterruptedException e) {
-            return new ArrayList<>();
+            System.out.println("[Elevator.call] ERROR: Elevator thread " + Thread.currentThread().getName() + " interrupted in call(). Preserving interrupt status.");
+            Thread.currentThread().interrupt(); // Preserve interrupt status
+            System.out.println("[Elevator.call] INFO: Elevator thread " + Thread.currentThread().getName() + " finishing due to interruption. Log size: " + actionLog.size());
+            return actionLog; // Return accumulated logs on interrupt
+        } finally {
+            // This might log before the actionLog is complete if controlLoop finishes normally
+            // For more accurate "final" logging, it should be at the very end of controlLoop's execution path.
+            // However, per instruction, placing it here.
+            // System.out.println("[Elevator.call] INFO: Elevator thread " + Thread.currentThread().getName() + " finishing. Log size: " + actionLog.size());
         }
     }
 
-    public DoorsState getDoorsState() {
+    public synchronized DoorsState getDoorsState() {
         return doorsState;
     }
 
-    public DoorsState openDoors() {
+    public synchronized DoorsState openDoors() {
         if (doorsState != DoorsState.opened) {
             actionLog.add(Action.open);
         }
@@ -90,7 +125,7 @@ public class Elevator implements Callable<List<Action>> {
         return getDoorsState();
     }
 
-    public DoorsState closeDoors() {
+    public synchronized DoorsState closeDoors() {
         if (doorsState != DoorsState.closed) {
             actionLog.add(Action.close);
         }
@@ -98,61 +133,96 @@ public class Elevator implements Callable<List<Action>> {
         return getDoorsState();
     }
 
-    public int getFloor() {
+    public synchronized int getFloor() {
         return floor;
     }
 
-    public void goUp() {
+    public synchronized void goUp() {
         closeDoors();
         floor++;
         actionLog.add(Action.up);
     }
 
     public boolean isSameDirection(Action direction) {
-        return direction.equals(queue.get(0));
+        return direction.equals(queue.peek());
     }
 
-    public void goDown() {
+    public synchronized void goDown() {
         closeDoors();
         floor--;
         actionLog.add(Action.down);
     }
 
     private List<Action> controlLoop() throws InterruptedException {
-        boolean running = true;
-        while (running) {
-            handleInterrupts();
-            handleTransitCalls();
-            Thread.sleep(clockSpeed);
-            if (!queue.isEmpty()) {
-                Action action = queue.remove(0);
-                switch (action) {
-                    case open:
-                        openDoors();
-                        break;
-                    case close:
-                        closeDoors();
-                        break;
-                    case up:
-                        goUp();
-                        break;
-                    case down:
-                        goDown();
-                        break;
-                    case end:
-                        running = false;
-                        break;
-                    default:
-                        break;
+        System.out.println("[Elevator.controlLoop] INFO: " + Thread.currentThread().getName() + " entering control loop. Running: " + this.running);
+        while (this.running) {
+            try {
+                if (!this.running) break; // Check at the start of the loop iteration
+
+                handleInterrupts();
+                if (!this.running) break; // Check after handleInterrupts
+
+                handleTransitCalls();
+                if (!this.running) break; // Check after handleTransitCalls
+
+                System.out.println("[Elevator.controlLoop] INFO: " + Thread.currentThread().getName() + " polling queue. Running: " + this.running);
+                Action action = queue.poll(100, TimeUnit.MILLISECONDS); // Use poll with timeout
+                System.out.println("[Elevator.controlLoop] INFO: " + Thread.currentThread().getName() + " polled action: " + (action != null ? action : "null") + ". Running: " + this.running);
+
+                if (action != null) {
+                    switch (action) {
+                        case open:
+                            openDoors();
+                            break;
+                        case close:
+                            closeDoors();
+                            break;
+                        case up:
+                            goUp();
+                            break;
+                        case down:
+                            goDown();
+                            break;
+                        default:
+                            // No action or unknown action
+                            break;
+                    }
+                    if (!this.running) break; // Check after processing action
+
+                    // Only sleep if running is still true and an action was processed.
+                    if (this.running && clockSpeed > 0) {
+                        System.out.println("[Elevator.controlLoop] INFO: " + Thread.currentThread().getName() + " sleeping for " + clockSpeed + "ms. Running: " + this.running);
+                        Thread.sleep(clockSpeed); // This can also throw InterruptedException
+                    }
+                } else {
+                    // Action was null (poll timed out). Loop will continue, checking `this.running`.
+                    // No specific sleep needed here as poll already waited.
                 }
-            } else {
+            } catch (InterruptedException e) {
+                System.out.println("[Elevator.controlLoop] ERROR: " + Thread.currentThread().getName() + " InterruptedException. Running: " + this.running);
+                if (!this.running) {
+                    System.out.println("[Elevator.controlLoop] INFO: " + Thread.currentThread().getName() + " Interrupted and running is false, breaking loop.");
+                    break;
+                } else {
+                    System.out.println("[Elevator.controlLoop] INFO: " + Thread.currentThread().getName() + " Interrupted but running is true, re-interrupting.");
+                    Thread.currentThread().interrupt();
+                }
+            }
+
+            if (!this.running) break; // Check before deciding to handle next call
+
+            if (this.running && queue.isEmpty()) { // If primary queue is empty, check call queue
+                System.out.println("[Elevator.controlLoop] INFO: " + Thread.currentThread().getName() + " primary queue empty, handling next call. Running: " + this.running);
                 handleNextCall();
             }
         }
+        System.out.println("[Elevator.controlLoop] INFO: " + Thread.currentThread().getName() + " exiting control loop. Running: " + this.running);
+        // Moved the "finishing" log from call() to here for more accuracy on normal completion
+        System.out.println("[Elevator.call] INFO: Elevator thread " + Thread.currentThread().getName() + " finishing. Log size: " + actionLog.size());
         return actionLog;
     }
 
-    public void goToFloor(int floor) {
+    public synchronized void goToFloor(int floor) {
         int checkedFloor = boundsCheckFloor(floor);
         if (isInterruptNeeded(checkedFloor)) {
             addInterrupt(checkedFloor);
@@ -166,17 +236,25 @@ public class Elevator implements Callable<List<Action>> {
     }
 
     private void queueOpen() {
-        queue.add(Action.open);
+        try {
+            queue.put(Action.open);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
     }
 
-    private boolean isInterruptNeeded(int checkedFloor) {
+    private synchronized boolean isInterruptNeeded(int checkedFloor) {
         return (checkedFloor > this.nextDestination && checkedFloor < this.floor)
                 || (checkedFloor < this.nextDestination && checkedFloor > this.floor);
     }
 
     private void queueMovement(int numberOfFloors, Action direction) {
         for (int i = 0; i < Math.abs(numberOfFloors); i++) {
-            queue.add(direction);
+            try {
+                queue.put(direction);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
         }
     }
 
@@ -189,25 +267,27 @@ public class Elevator implements Callable<List<Action>> {
         return floor;
     }
 
-    public void addInterrupt(int floor) {
+    public synchronized void addInterrupt(int floor) {
         interrupts[floor] = true;
     }
 
-    public void handleInterrupts() {
+    public synchronized void handleInterrupts() {
         if (interrupts[floor]) {
             openDoors();
         }
     }
 
     public void handleTransitCalls() {
-        Set<Integer> calledFloors = callQueue.stream().map(ElevatorCall::getFloor).collect(Collectors.toSet());
+        Set<Integer> calledFloors = new ArrayList<>(callQueue).stream().map(ElevatorCall::getFloor).collect(Collectors.toSet());
         if (calledFloors.contains(getFloor())) {
-            for (Iterator<ElevatorCall> iterator = callQueue.iterator(); iterator.hasNext(); ) {
-                if (isTransitCall(iterator.next())) {
-                    iterator.remove();
+            List<ElevatorCall> callsToRemove = new ArrayList<>();
+            for (ElevatorCall elevatorCall : new ArrayList<>(callQueue)) {
+                if (isTransitCall(elevatorCall)) {
+                    callsToRemove.add(elevatorCall);
                     openDoors();
                 }
             }
+            callQueue.removeAll(callsToRemove);
         }
     }
 
@@ -218,9 +298,24 @@ public class Elevator implements Callable<List<Action>> {
     }
 
     public void handleNextCall() {
-        if (!callQueue.isEmpty()) {
-            ElevatorCall call = callQueue.remove(0);
-            goToFloor(call.getFloor());
+        if (!this.running) return; // Check running status at the beginning
+
+        // No need to check callQueue.isEmpty() here, poll will handle it.
+        try {
+            System.out.println("[Elevator.handleNextCall] INFO: " + Thread.currentThread().getName() + " polling callQueue.");
+            ElevatorCall call = callQueue.poll(100, TimeUnit.MILLISECONDS); // Use poll with timeout
+            System.out.println("[Elevator.handleNextCall] INFO: " + Thread.currentThread().getName() + " polled call: " + (call != null ? call.getFloor() + " " + call.getDirection() : "null") + ". Running: " + this.running);
+
+            if (call != null) {
+                goToFloor(call.getFloor());
+            }
+        } catch (InterruptedException e) {
+            System.out.println("[Elevator.handleNextCall] ERROR: " + Thread.currentThread().getName() + " InterruptedException in handleNextCall. Running: " + this.running);
+            if (!this.running) {
+                // If stopping, just return.
+                return;
+            }
+            Thread.currentThread().interrupt(); // Preserve interrupt if for other reasons
         }
     }
 
