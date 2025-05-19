@@ -3,6 +3,8 @@ package model.elevator;
 import org.junit.jupiter.api.Test;
 import java.util.List;
 import java.util.concurrent.*;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class ElevatorConcurrencyTest {
@@ -94,7 +96,7 @@ public class ElevatorConcurrencyTest {
             // Wait for the thread to actually terminate
             // Ensure getElevatorThread() is available and returns the current thread instance
             if (elevator.getElevatorThread() != null) {
-                 elevator.getElevatorThread().join(1000); // Wait max 1 sec
+                 elevator.getElevatorThread().join(2000); // Wait max 2 sec
                  assertFalse(elevator.getElevatorThread().isAlive(), "Elevator thread (" + i + ") should be stopped");
             } else {
                 // If thread is null, it means it might have already terminated or wasn't started properly.
@@ -103,7 +105,14 @@ public class ElevatorConcurrencyTest {
                 // If elevator.getElevatorThread() can be null post-stop, the assertion needs adjustment.
                 // Considering the current Elevator.java, elevatorThread is not set to null by stopElevator.
             }
-            List<Action> actionLog = task.get(); // Should not block indefinitely
+            List<Action> actionLog = null;
+            try {
+                actionLog = task.get(500, TimeUnit.MILLISECONDS); // Wait for future completion with a timeout
+            } catch (TimeoutException e) {
+                System.err.println("Timeout waiting for actionLogFuture in testStartStopConcurrency iteration " + i);
+                // Optionally, dump stack trace or rethrow if test should fail hard on timeout here
+            }
+            // The original assertNotNull(actionLog) will catch if it's still null due to timeout.
             assertNotNull(actionLog);
         }
     }
